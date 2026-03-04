@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CheckCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,8 +58,26 @@ export default function Enroll() {
     },
   });
 
-  const onSubmit = (data: EnrollForm) => {
-    console.log("Enrollment data:", data);
+  const [loading, setLoading] = useState(false);
+
+  const onSubmit = async (data: EnrollForm) => {
+    setLoading(true);
+    const { error } = await supabase.from("enrollment_submissions").insert({
+      student_name: data.studentName,
+      parent_name: data.parentName,
+      age: data.age,
+      school_name: data.schoolName,
+      city: data.city,
+      phone: data.phone,
+      email: data.email,
+      centre: data.centre,
+      message: data.message || null,
+    });
+    setLoading(false);
+    if (error) {
+      toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
+      return;
+    }
     toast({ title: "Enrollment Submitted!", description: "We'll contact you shortly to confirm your enrollment." });
     setSubmitted(true);
   };
@@ -156,8 +175,8 @@ export default function Enroll() {
                 <FormField control={form.control} name="message" render={({ field }) => (
                   <FormItem><FormLabel>Message (Optional)</FormLabel><FormControl><Textarea placeholder="Any specific requirements..." rows={3} {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <Button type="submit" size="lg" className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-cta font-bold text-base">
-                  Submit Enrollment
+                <Button type="submit" size="lg" disabled={loading} className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90 shadow-cta font-bold text-base">
+                  {loading ? "Submitting..." : "Submit Enrollment"}
                 </Button>
               </form>
             </Form>
